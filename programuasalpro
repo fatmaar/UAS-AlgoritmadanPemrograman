@@ -1,0 +1,357 @@
+#include <iostream>
+#include <conio.h>
+#include <fstream>
+#include <cstring>
+#include <iomanip>
+
+using namespace std;
+
+struct
+{
+    char kode[10];
+    char nama[30];
+    float harga;
+    bool flag; // Menyimpan status barang aktif atau tidak
+} barang;
+
+void appendData (char *namafile) // Fungsi u/ nambah data barang ke file
+{
+    string inp;
+    system("cls");
+
+    cout << "penambahan Barang " << endl;
+    cout << "================= " << endl;
+    cout << "kode : "; getline(cin,inp); strcpy(barang.kode, inp.c_str());
+    cout << "Nama : "; getline(cin, inp); strcpy(barang.nama, inp.c_str());
+    cout << "Harga: "; cin >> inp; barang.harga = atof (inp.c_str());
+    barang.flag = 1; // tanda barang yg aktif
+
+    fstream myfile; // Mendeklarasikan objek file stream
+    myfile.open(namafile, ios::app); //buka file
+    if(!myfile.is_open()) {cout << "Error file ...!"; getch();} //jika gagal buka file
+    else myfile.write((char*)&barang,sizeof(barang)); // jika berhasil
+    myfile.close();
+};
+
+void DspAllData(char *namafile,bool flag) // Fungsi u/ menampilkan semua data barang berdasarkan flag
+{
+    system("cls");
+    cout << "Data Barang" << endl << endl;
+    cout << "kode       Nama                            Harga" << endl;
+    cout << "================================================" << endl;
+
+    ifstream myfile; // Mendeklarasikan objek input file stream
+    myfile.open(namafile, ios::binary);
+    if (!myfile.is_open()) {
+        cout << "Error opening file!" << endl;
+    } else {
+        while (myfile.read((char*)&barang, sizeof(barang))) { // membaca data barang dari file
+            if (barang.flag==flag) { // Jika flag barang sesuai dengan parameter
+                cout << setiosflags(ios::left) << setw(10) << barang.kode; // lebar
+                cout << setiosflags(ios::left) << setw(30) << barang.nama;
+                cout << setiosflags(ios::fixed) << setprecision(2) << setw(10) << barang.harga; // presisi 2
+                cout << endl;
+            }
+        }
+    };
+    cout << endl << "Press any key to continue..."; getch();
+    myfile.close();
+};
+void FilterData (char*namafile) // Fungsi u/ memfilter & menampilkan data barang berdasarkan nama
+{
+    string inp,brg;
+    system("cls");
+
+    cout << "nama barang: "; getline(cin,inp);
+
+    cout << "Data Barang" << endl << endl;
+    cout << "kode       Nama                            Harga" << endl;
+    cout << "================================================" << endl;
+
+    ifstream myfile;
+    myfile.open(namafile);
+    if (!myfile.is_open()) cout << "Error File...!" << endl;
+    else
+    {
+       while (myfile.read((char*)&barang,sizeof(barang))) // Membaca data barang dari file
+       {
+           if(barang.flag && strstr(barang.nama,inp.c_str())) // Jika barang aktif dan nama mengandung substring input
+           {
+            cout << setiosflags(ios::left) << setw(10) << barang.kode;
+            cout << setiosflags(ios::left) << setw(30) << barang.nama;
+            cout << setiosflags(ios::left) << setw(10) << barang.harga;
+            cout << endl;
+           }
+       }
+       cout << "press any key to continue...";
+       getch();
+       myfile.close();
+    };
+};
+
+void ModifyData(char *namafile) { // Fungsi u/ mengubah data barang
+    long pos; // deklarasi variabel untuk posisi file
+    string inp;
+    system("cls");
+
+    cout << "Kode barang yang akan diedit: ";
+    getline(cin, inp);
+
+    fstream myfile;
+    myfile.open(namafile, ios::in | ios::out | ios::binary);
+    if (!myfile) {
+        cout << "File Error...";
+    } else {
+        bool dataDitemukan = false;
+        while (myfile.read((char*)&barang, sizeof(barang)) && !myfile.eof()) { //baca data barang dr file
+            if (strcmp(barang.kode, inp.c_str()) == 0 && barang.flag) { // Jika kode barang cocok dan barang aktif
+                dataDitemukan = true;
+                break;
+            }
+        }
+
+        if (!dataDitemukan) {
+            cout << "Data tidak ditemukan" << endl;
+        } else {
+            system("cls");
+            cout << "Data barang sebelumnya" << endl;
+            cout << "================================================" << endl;
+            cout << "Kode: " << barang.kode << endl;
+            cout << "Nama: " << barang.nama << endl;
+            cout << "Harga: " << barang.harga << endl;
+            cout << "================================================" << endl;
+            cout << endl;
+
+            cout << "Masukkan data baru, tekan enter jika tidak ingin mengubah" << endl;
+            cout << "Kode: " << barang.kode << endl;
+
+            cout << "Nama: ";
+            getline(cin, inp);
+            if (!inp.empty()) {
+                strcpy(barang.nama, inp.c_str());
+            }
+
+            cout << "Harga: ";
+            getline(cin, inp);
+            if (!inp.empty()) {
+                barang.harga = atof(inp.c_str());
+            }
+
+            pos = myfile.tellp(); // posisi file saat ini
+            myfile.seekp(pos - sizeof(barang)); //mengatur posisi file u/ nulis ulang data
+            myfile.write((char*)&barang, sizeof(barang)); //nulis data barang yg diubah
+            cout << endl << "Data berhasil diubah" << endl;
+        }
+    };
+    cout << "Tekan tombol apapun untuk melanjutkan..";
+    getch();
+    myfile.close();
+};
+
+
+long searchBrg(char *namafile,bool tanda) // Fungsi untuk mencari barang berdasarkan flag
+{
+    long pos = -1;
+    string inp;
+    cout << "nama barang : ";
+
+    fstream myfile;
+    myfile.open(namafile);
+    if(!myfile) cout << "File error...";
+    else
+    {
+        while (myfile.read((char*)&barang,sizeof(barang)) &&
+        !myfile.eof() && strcmp(barang.kode,inp.c_str())); // Membaca data barang dan membandingkan dengan input
+
+        if(!myfile.eof() && barang.flag==tanda) pos=myfile.tellp(); // Jika barang ditemukan dan flag sesuai, menyimpan posisi file
+        else cout << "Data tidak ditemukan" << endl;
+    };
+    myfile.close();
+    return pos;
+};
+
+void DeleteData(char *namafile) { // Fungsi untuk menghapus data barang
+    system("cls");
+    string inp;
+    bool dataDitemukan = false;
+
+    cout << "Kode barang yang akan dihapus : ";
+    getline(cin, inp);
+
+    fstream myfile;
+    myfile.open(namafile, ios::in | ios::out | ios::binary);
+
+    if (!myfile) {
+        cout << "Error opening file!" << endl;
+    } else {
+        while (myfile.read((char*)&barang, sizeof(barang))) {
+            if (strcmp(barang.kode, inp.c_str()) == 0 && barang.flag) { // Jika kode barang cocok dan barang aktif
+                dataDitemukan = true;
+                break;
+            }
+        }
+
+        if (!dataDitemukan) {
+            cout << "Data tidak ditemukan" << endl;
+        } else {
+            cout << "Data yang akan dihapus" << endl;
+            cout << "Kode: " << barang.kode << endl;
+            cout << "Nama: " << barang.nama << endl;
+            cout << "Harga: " << barang.harga << endl;
+            cout << "================================================" << endl;
+            cout << endl << "Tekan 'y' untuk hapus..";
+
+            if(getch() != 'y') {
+                cout << endl << "Data tidak dihapus.." << endl;
+            } else {
+
+                barang.flag = 0; // nandain yg dihapus
+                long pos = myfile.tellp();
+                myfile.seekp(pos - sizeof(barang));
+                myfile.write((char*)&barang, sizeof(barang));
+                cout << endl << "Data berhasil dihapus" << endl;
+            }
+        }
+    };
+    cout << "Tekan tombol apapun untuk melanjutkan..";
+    getch();
+    myfile.close();
+};
+
+void DspDelData(char *namafile, bool flag) { // Fungsi u/ menampilkan data barang yg dihapus
+    system("cls");
+    cout << "Data Barang Deleted" << endl << endl;
+    cout << "kode       Nama                            Harga" << endl;
+    cout << "================================================" << endl;
+
+    ifstream myfile;
+    myfile.open(namafile, ios::binary);
+    if (!myfile.is_open()) {
+        cout << "Error opening file!" << endl;
+    } else {
+        while (myfile.read((char*)&barang, sizeof(barang))) {
+            if (barang.flag == flag) {
+                cout << setiosflags(ios::left) << setw(10) << barang.kode;
+                cout << setiosflags(ios::left) << setw(30) << barang.nama;
+                cout << setiosflags(ios::fixed) << setprecision(2) << setw(10) << barang.harga;
+                cout << endl;
+            }
+        }
+    };
+    cout << endl << "Press any key to continue..."; getch();
+    myfile.close();
+};
+
+void RecoveryData (char *namafile) // Fungsi untuk mengembalikan data barang yg dihapus
+{
+    long pos;
+    string inp;
+    system("cls");
+
+    cout << "Kode barang yang akan di undelete : "; getline(cin,inp);
+
+    fstream myfile;
+
+    myfile.open(namafile);
+    if (!myfile) cout << "File Error...";
+    else
+    {
+    while (myfile.read((char*)&barang, sizeof(barang)) &&
+         !myfile.eof() && strcmp(barang.kode, inp.c_str()));
+
+    if (myfile.eof()) cout << "Data tidak ditemukan" << endl;
+    else if (barang.flag) cout << "Data sudah aktif" << endl;
+    else
+    {
+        cout << "Data yang akan di undelete" << endl;
+        cout << "Kode: " << barang.kode << endl;
+        cout << "Nama: " << barang.nama << endl;
+        cout << "Harga: " << barang.harga << endl;
+        cout << "================================================" << endl;
+        cout << "" <<endl;
+
+        cout << endl << "Tekan y untuk undelete..";
+        if(getch()!='y') cout << endl << "Data tidak jadi di undelete.." << endl;
+        else
+        {
+            barang.flag=1;
+            pos=myfile.tellp();
+            myfile.seekp(pos-sizeof(barang));
+            myfile.write ((char*)&barang,sizeof(barang));
+            cout << endl << "Data sudah di undelete" << endl;
+        }
+    }
+};
+    cout << "press any key..";
+    getch();
+    myfile.close();
+};
+
+void PckingData(char *namafile, char *backfile) { // Fungsi untuk mengemas data barang
+  system("cls");
+
+  cout << "Process..." << endl;
+
+  ifstream myfile(namafile, ios::binary); // Membuka file asli dalam mode binary
+  ofstream myback(backfile, ios::binary | ios::app); // Membuka file backup dalam mode append dan binary
+  ofstream tempFile("temp.dat", ios::binary); // Membuka file temporer dalam mode binary
+
+  if (myfile && myback && tempFile) { // Jika semua file berhasil dibuka
+    while (myfile.read((char *)&barang, sizeof(barang)) &&!myfile.eof()) { // Membaca data barang dari file asli
+      if (barang.flag) { // Jika barang aktif
+        tempFile.write((char *)&barang, sizeof(barang)); // Menulis data barang ke file temporer
+      } else {
+        myback.write((char *)&barang, sizeof(barang)); // Menulis data barang ke file backup
+      }
+    }
+  } else {
+    cout << "File Error..." << endl;
+  }
+
+  myfile.close();
+  myback.close();
+  tempFile.close();
+
+
+  remove(namafile);  // Menghapus file asli
+  rename("temp.dat", namafile); // Mengganti nama file temporer menjadi file asli
+
+  cout << "Data Packed.. Press any key to continue...";
+  getch();
+}
+
+int main ()
+{
+    char *namafile="binerfile.dat"; //deklarasi nama file asli
+    char *backfile="binerfile.bck"; //deklarasi nama file backup
+    bool Exit = false;
+    do
+    {
+        system("cls");
+        cout << "1. Tambah Data" << endl;
+        cout << "2. Display Data" << endl;
+        cout << "3. Cari Data" << endl;
+        cout << "4. Modify Data" << endl;
+        cout << "5. Delete Data" << endl;
+        cout << "6. Display Delete Data" << endl;
+        cout << "7. Recovery Data" << endl;
+        cout << "8. Packing Data" << endl;
+        cout << "0. Exit" << endl;
+        cout << "plihan : ";
+
+        switch (getch())
+        {
+            case '1' : appendData (namafile); break;
+            case '2' : DspAllData (namafile, true); break;
+            case '3' : FilterData (namafile); break;
+            case '4' : ModifyData (namafile); break;
+            case '5' : DeleteData (namafile); break;
+            case '6' : DspDelData (namafile, false); break;
+            case '7' : RecoveryData (namafile); break;
+            case '8' : PckingData (namafile,backfile); break;
+            case '0' : Exit=true; break;
+            default  : cout << "Wrong choice...!"; getch(); break;
+        }
+    }while (!Exit);
+    return 0;
+}
